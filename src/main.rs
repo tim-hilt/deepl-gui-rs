@@ -1,12 +1,13 @@
+use reqwest::blocking::Client;
 use reqwest::header::AUTHORIZATION;
 use serde::{Deserialize, Serialize};
 use std::env;
 
 #[derive(Serialize)]
 struct Req {
-    target_lang: &'static str,
-    source_lang: &'static str,
-    text: [&'static str; 1],
+    target_lang: String,
+    source_lang: String,
+    text: [String; 1],
 }
 
 #[derive(Deserialize)]
@@ -19,24 +20,23 @@ struct Res {
     translations: [T; 1],
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api_key: String = env::var("DEEPL_API_KEY").expect("DEEPL_API_KEY not set");
 
+    let client = Client::new();
+
     let body = Req {
-        source_lang: "DE",
-        target_lang: "EN",
-        text: ["Hallo, Welt!"],
+        source_lang: "DE".to_string(),
+        target_lang: "EN".to_string(),
+        text: ["Hallo, Welt!".to_string()],
     };
 
-    let res: Res = reqwest::Client::new()
+    let res: Res = client
         .post("https://api-free.deepl.com/v2/translate")
         .json(&body)
         .header(AUTHORIZATION, format!("DeepL-Auth-Key {}", api_key))
-        .send()
-        .await?
-        .json()
-        .await?;
+        .send()?
+        .json()?;
 
     println!("{}", res.translations[0].text);
 
