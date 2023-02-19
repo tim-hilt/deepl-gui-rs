@@ -20,7 +20,7 @@ struct Res {
     translations: [T; 1],
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn make_request() -> Result<String, Box<dyn std::error::Error>> {
     let api_key: String = env::var("DEEPL_API_KEY").expect("DEEPL_API_KEY not set");
 
     let client = Client::new();
@@ -31,14 +31,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         text: ["Hallo, Welt!".to_string()],
     };
 
-    let res: Res = client
+    let res = client
         .post("https://api-free.deepl.com/v2/translate")
         .json(&body)
         .header(AUTHORIZATION, format!("DeepL-Auth-Key {}", api_key))
         .send()?
-        .json()?;
+        .json::<Res>()?;
 
-    println!("{}", res.translations[0].text);
+    let translation = res.translations.into_iter().nth(0).unwrap();
+    Ok(translation.text)
+}
 
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let translation = make_request()?;
+
+    println!("{}", translation);
     Ok(())
 }
